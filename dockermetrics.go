@@ -27,6 +27,7 @@ func init() {
 
 	formatters = map[string]FormatterFactory{
 		"graphite": NewGraphite,
+		"influxdb": NewInfluxdb,
 	}
 }
 
