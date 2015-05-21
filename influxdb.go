@@ -42,7 +42,10 @@ func NewInfluxdb() Formatter {
 	passwd := getEnv("INFLUXDB_PASSWD", "root")
 	db := getEnv("INFLUXDB_DATABASE", "stats")
 	series := getEnv("INFLUXDB_SERIES", "container_metrics")
-	write_interval := strconv.Atoi(getEnv("INFLUXDB_WRITE_INTERVAL", "1"))
+	write_interval, err := strconv.Atoi(getEnv("INFLUXDB_WRITE_INTERVAL", "1"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	machinename, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err)
