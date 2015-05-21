@@ -110,7 +110,6 @@ func (c *Client) Stream(container *docker.Container) {
 	id := container.ID
 	defer c.Remove(id)
 	ch := make(chan *docker.Stats)
-	defer close(ch)
 	s, r := (chan<- *docker.Stats)(ch), (<-chan *docker.Stats)(ch)
 	opts := docker.StatsOptions{ID: id, Stats: s}
 	go func() {
