@@ -64,7 +64,7 @@ func NewInfluxdb() Formatter {
 		log.Fatal(err)
 	}
 	columns := &[]string{
-		"timestamp",
+		"time",
 		"machine_name",
 		"container_name",
 		"container_id",
@@ -156,7 +156,7 @@ func (f *fmtInfluxdb) Fmt(stats *docker.Stats, container *docker.Container, imag
 	name := container.Name[1:]
 	point := []interface{}{
 		// general metadata
-		stats.Read.UnixNano(),
+		int64(time.Duration(stats.Read.UnixNano()) / time.Microsecond),
 		f.machinename,
 		name,
 		id,
