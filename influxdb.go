@@ -34,7 +34,7 @@ func NewInfluxdb() Formatter {
 	if host == "" {
 		log.Fatal("Missing influxdb host")
 	}
-	port, err := strconv.Atoi(getEnv("INFLUXDB_PORT", "8083"))
+	port, err := strconv.Atoi(getEnv("INFLUXDB_PORT", "8086"))
 	if err != nil {
 		log.Fatal(err)
 	}
