@@ -18,6 +18,27 @@ func getEnv(name, def string) string {
 	return def
 }
 
+// XXX: currently summing the values for all block devices attached to each container
+func readBlockStat(stats []docker.BlkioStatsEntry) []interface{} {
+	z := uint64(0)
+	entries := []interface{}{z, z, z, z, z}
+	for _, v := range stats {
+		switch v.Op {
+		case "Read":
+			entries[0] = entries[0].(uint64) + v.Value
+		case "Write":
+			entries[1] = entries[1].(uint64) + v.Value
+		case "Sync":
+			entries[2] = entries[2].(uint64) + v.Value
+		case "Async":
+			entries[3] = entries[3].(uint64) + v.Value
+		case "Total":
+			entries[4] = entries[4].(uint64) + v.Value
+		}
+	}
+	return entries
+}
+
 type fmtInfluxdb struct {
 	machinename string
 	database    string
@@ -113,6 +134,38 @@ func NewInfluxdb() Formatter {
 		"cpu_usage_in_usermode",
 		"cpu_usage_in_kernelmode",
 		"cpu_total_usage",
+		"block_service_bytes_read",
+		"block_service_bytes_write",
+		"block_service_bytes_sync",
+		"block_service_bytes_async",
+		"block_service_bytes_total",
+		"block_serviced_read",
+		"block_serviced_write",
+		"block_serviced_sync",
+		"block_serviced_async",
+		"block_serviced_total",
+		"block_queue_read",
+		"block_queue_write",
+		"block_queue_sync",
+		"block_queue_async",
+		"block_queue_total",
+		"block_service_time_read",
+		"block_service_time_write",
+		"block_service_time_sync",
+		"block_service_time_async",
+		"block_service_time_total",
+		"block_wait_time_read",
+		"block_wait_time_write",
+		"block_wait_time_sync",
+		"block_wait_time_async",
+		"block_wait_time_total",
+		"block_merged_read",
+		"block_merged_write",
+		"block_merged_sync",
+		"block_merged_async",
+		"block_merged_total",
+		"block_time",
+		"block_sectors",
 	}
 
 	fmt := &fmtInfluxdb{
@@ -209,6 +262,26 @@ func (f *fmtInfluxdb) Fmt(stats *docker.Stats, container *docker.Container, imag
 		stats.CPUStats.CPUUsage.UsageInKernelmode,
 		stats.CPUStats.CPUUsage.TotalUsage,
 	}
+
+	// block stats
+	point = append(point, readBlockStat(stats.BlkioStats.IOServiceBytesRecursive)...)
+	point = append(point, readBlockStat(stats.BlkioStats.IOServicedRecursive)...)
+	point = append(point, readBlockStat(stats.BlkioStats.IOQueueRecursive)...)
+	point = append(point, readBlockStat(stats.BlkioStats.IOServiceTimeRecursive)...)
+	point = append(point, readBlockStat(stats.BlkioStats.IOWaitTimeRecursive)...)
+	point = append(point, readBlockStat(stats.BlkioStats.IOMergedRecursive)...)
+
+	var io_time uint64
+	for _, v := range stats.BlkioStats.IOTimeRecursive {
+		io_time += v.Value
+	}
+	point = append(point, io_time)
+
+	var sectors uint64
+	for _, v := range stats.BlkioStats.SectorsRecursive {
+		sectors += v.Value
+	}
+	point = append(point, sectors)
 
 	series := &client.Series{
 		Name:    f.table,
